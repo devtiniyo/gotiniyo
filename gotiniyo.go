@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -93,13 +92,13 @@ func (tiniyo *Tiniyo) getBasicAuthCredentials() (string, string) {
 	return tiniyo.AuthID, tiniyo.AuthToken
 }
 
-func (tiniyo *Tiniyo) post(formValues url.Values, tiniyoUrl string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", tiniyoUrl, strings.NewReader(formValues.Encode()))
+func (tiniyo *Tiniyo) post(payload *strings.Reader, tiniyoUrl string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", tiniyoUrl, payload)
 	if err != nil {
 		return nil, err
 	}
 	req.SetBasicAuth(tiniyo.getBasicAuthCredentials())
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Type", "application/json")
 
 	return tiniyo.do(req)
 }

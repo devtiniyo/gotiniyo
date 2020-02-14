@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
+	"strings"
 	"time"
 )
 
@@ -47,19 +47,17 @@ func (sms *SmsResponse) DateSentAsTime() (time.Time, error) {
 
 // SendSMS uses Tiniyo to send a text message.
 // See http://www.tiniyo.com/docs/api/rest/sending-sms for more information.
-func (tiniyo *Tiniyo) SendSMS(from, to, body, statusCallback, applicationSid string) (smsResponse *SmsResponse, exception *Exception, err error) {
-	formValues := initFormValues(to, body, "", statusCallback, applicationSid)
-	formValues.Set("From", from)
-
-	smsResponse, exception, err = tiniyo.sendMessage(formValues)
+func (tiniyo *Tiniyo) SendSMS(from, to, text, callbackUrl, applicationSid string) (smsResponse *SmsResponse, exception *Exception, err error) {
+	payload := initPayloadValues(to, from, text, callbackUrl)
+	smsResponse, exception, err = tiniyo.sendMessage(payload)
 	return
 }
 
 // Core method to send message
-func (tiniyo *Tiniyo) sendMessage(formValues url.Values) (smsResponse *SmsResponse, exception *Exception, err error) {
+func (tiniyo *Tiniyo) sendMessage(payload *strings.Reader) (smsResponse *SmsResponse, exception *Exception, err error) {
 	tiniyoUrl := tiniyo.BaseUrl + "Accounts/" + tiniyo.AuthID + "/Messages"
 
-	res, err := tiniyo.post(formValues, tiniyoUrl)
+	res, err := tiniyo.post(payload, tiniyoUrl)
 	if err != nil {
 		return smsResponse, exception, err
 	}
@@ -84,24 +82,8 @@ func (tiniyo *Tiniyo) sendMessage(formValues url.Values) (smsResponse *SmsRespon
 	return smsResponse, exception, err
 }
 
-// Form values initialization
-func initFormValues(to, body, mediaUrl, statusCallback, applicationSid string) url.Values {
-	formValues := url.Values{}
-
-	formValues.Set("To", to)
-	formValues.Set("Body", body)
-
-	if mediaUrl != "" {
-		formValues.Set("MediaUrl", mediaUrl)
-	}
-
-	if statusCallback != "" {
-		formValues.Set("StatusCallback", statusCallback)
-	}
-
-	if applicationSid != "" {
-		formValues.Set("ApplicationSid", applicationSid)
-	}
-
-	return formValues
+// Payload initialization
+func initPayloadValues(to, from, text,callbackUrl string) *strings.Reader {
+	payload := strings.NewReader("{\n  \"dst\": \""+ to +"\",\n  \"src\": \"TINIQE\",\n  \"method\": \"post\",\n  \"text\": \""+ text +"\",\n  \"url\": \""+ callbackUrl +"\"\n}")
+	return payload
 }
